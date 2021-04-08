@@ -58,7 +58,7 @@ class Sword(Base):
     id = Column(Integer, primary_key=True)
     cost = Column(Integer)
     
-    player_id = Column(Integer, ForeignKey('players.id'))
+    player_id = Column(Integer, ForeignKey('players.id'), nullable=True)
     player = relationship('Player', foreign_keys=[player_id])
      
 
@@ -82,22 +82,9 @@ class Transaction(Base):
 Start the session
 '''
 
-engine = create_engine('sqlite:///:memory:')
+engine = create_engine('sqlite:///sqllight.db')
 # metadata.create_all(engine)
 Base.metadata.create_all(engine)
 Session = sessionmaker()
 Session.configure(bind=engine)
 session = Session()
-
-
-'''
-Add fixture data
-'''
-
-session.add_all([
-    Player(name='batman', money=9999999),
-    Player(name='robin', money=1),
-    Guild(name='batman & robin'),
-])
-
-session.commit()
