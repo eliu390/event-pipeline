@@ -12,7 +12,7 @@ def main(event_body_schema, event_type, event_filter):
     """
     spark = SparkSession \
         .builder \
-        .appName("ExtractEventsJob") \
+        .appName("{}_job".format(event_type)) \
         .getOrCreate()
 
     raw_events = spark \

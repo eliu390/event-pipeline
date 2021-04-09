@@ -27,7 +27,7 @@ EVENT_TYPES=(
 )
 for event_type in "${EVENT_TYPES[@]}"; do
     docker-compose exec -d spark spark-submit "${D}/stream/${event_type}.py"
-    sleep 5
+    sleep 10
 done
 
 echo "Running api calls"
