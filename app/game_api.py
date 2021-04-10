@@ -11,14 +11,14 @@ producer = KafkaProducer(bootstrap_servers='kafka:29092')
 
 
 def log_to_kafka(topic, event):
+    event_type = event.pop('event_type')
+    event.update({'timestamp': datetime.now().strftime('%D %T')})
     producer.send(
         topic,
         json.dumps(
             {
-                'event_type': event.pop('event_type'),
-                'event_body': event.update(
-                    {'timestamp': datetime.now().strftime('%D %T')}
-                ),
+                'event_type': event_type,
+                'event_body': event,
             }
         ).encode()
     )
