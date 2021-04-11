@@ -1,0 +1,1 @@
+# Random event generator script.
