@@ -50,3 +50,16 @@ done
 for event_type in "${EVENT_TYPES[@]}"; do
     docker-compose exec cloudera hadoop fs -ls "/tmp/${event_type}"
 done
+
+sleep 20
+echo "Create hive tables" #hard-coded, since changing the table names for querying purposes.
+docker-compose exec cloudera hive -e "create external table if not exists default.swords (event_body string) stored as parquet location '/tmp/add_sword'  tblproperties ('parquet.compress'='SNAPPY');"
+sleep 5
+docker-compose exec cloudera hive -e "create external table if not exists default.guilds (event_body string) stored as parquet location '/tmp/add_guild'  tblproperties ('parquet.compress"="SNAPPY');"
+sleep 5
+docker-compose exec cloudera hive -e "create external table if not exists default.players (event_body string) stored as parquet location '/tmp/add_player'  tblproperties ('parquet.compress"="SNAPPY');"
+sleep 5
+docker-compose exec cloudera hive -e "create external table if not exists default.guild_membership (event_body string) stored as parquet location '/tmp/join_guild'  tblproperties ('parquet.compress"="SNAPPY');"
+sleep 5
+docker-compose exec cloudera hive -e "create external table if not exists default.sword_transactions (event_body string) stored as parquet location '/tmp/purchase_sword'  tblproperties ('parquet.compress"="SNAPPY');"
+echo "Ready to open kafka observer, run event generator, and query."
