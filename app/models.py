@@ -82,7 +82,7 @@ class Transaction(Base):
 Start the session
 '''
 
-engine = create_engine('sqlite:////sqllight.db')
+engine = create_engine('sqlite:///sqllight.db')
 # metadata.create_all(engine)
 Base.metadata.create_all(engine)
 Session = sessionmaker()

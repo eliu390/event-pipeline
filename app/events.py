@@ -53,5 +53,6 @@ while counter < NUM_OBJECTS:
         params=params,
     )
     if r.status_code != 200:
-        raise Exception('oops')
+        raise Exception('exception for event {}: {}\n\n{}'.format(action, r.reason, params))
     counter += 1
+    session.expire_all()
