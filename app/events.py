@@ -1,75 +1,57 @@
 # Random event generator script.
 import random
-import os
-import time
-from models import Guild, Player, GuildInteraction, Sword, Transaction, Session
+import requests
+import string
 from sqlalchemy.sql.expression import func
 
-session = Session()
+from models import Guild, Player, Sword, session
 
-EVENT_TYPES = ["add_player","add_sword","add_guild","join_guild","purchase_sword"]
-GUILD_NAMES = ["BatCave","Butlers","BadGuys","BadGuys","GoodGuys","GoodGuys","Cops","SupermansTeam"]
-PLAYER_NAMES = ["Bruce","Catwoman","Joker","Joker","Two-Face","PoisonIvy","MrFreeze","Alfred"]
+EVENT_TYPES = ['add_player','add_sword','add_guild','join_guild','purchase_sword']
+NUM_OBJECTS = 100
+
+def get_random_word(length=10):
+    return ''.join(
+        random.choice(string.ascii_letters) for _ in range(length)
+    )
+
 counter = 0
-
-while counter >= 0:
-    counter += 1
-    action = EVENT_TYPES[random.randint(0, len(EVENT_TYPES)-1)]
-    
-    if action == "add_sword":
-        cost = random.randint(1,101)
-        command = 'docker-compose exec mids curl "http://localhost:5000/add_sword?cost={}"'.format(cost)
-        os.system(command)
-    
-    elif action == "add_player":
-        draw = random.randint(0,len(PLAYER_NAMES)-1)
-        player_name = PLAYER_NAMES[draw]
-        money = random.randint(100,1001)
-        command = 'docker-compose exec mids curl "http://localhost:5000/add_player?name={}{}&money={}"'.format(
-            player_name,
-            counter,
-            money
-        )
-        os.system(command)
-    
-    elif action == "add_guild":
-        draw = random.randint(0,len(GUILD_NAMES)-1)
-        guild_name = GUILD_NAMES[draw]
-        command = 'docker-compose exec mids curl "http://localhost:5000/add_guild?name={}{}"'.format(
-            guild_name,
-            counter
-        )
-        os.system(command)
-
+while counter < NUM_OBJECTS:
+    action = random.choice(EVENT_TYPES)
+    if action == 'add_sword':
+        params = {'cost': random.randint(1, 101)}
+    elif action == 'add_player':
+        params = {'money': random.randint(1, 101), 'name': get_random_word()}
+    elif action == 'add_guild':
+        params = {'name': get_random_word(10)}
     elif action == 'join_guild':
-        if counter % 2 == 0: # join guild
-            print('joining guild')
-            player = session.query(Player).order_by(func.random()).first()
+        if counter % 2: # join guild
+            player = session.query(Player).filter(Player.guild_id == None).order_by(func.random()).first()
+            if player is None:
+                continue
             guild = session.query(Guild).order_by(func.random()).first()
-            command = 'docker-compose exec mids curl "http://localhost:5000/join_guild?player_id={}&guild_id={}&join=1"'.format(
-                player.id,
-                guild.id
-            )
-            os.system(command)
+            if guild is None:
+                continue
+            params = {'join': 1, 'player_id': player.id, 'guild_id': guild.id}
         else: # leave guild
-            print('leaving guild')
-            player = session.query(Player).order_by(func.random()).first()
-            if player.guild_id:
-                command = 'docker-compose exec mids curl "http://localhost:5000/join_guild?player_id={}&guild_id={}&join=0"'.format(
-                    player.id,
-                    player.guild_id
-                )
-                os.system(command)
-
+            player = session.query(Player).filter(Player.guild_id != None).order_by(func.random()).first()
+            if player is None:
+                continue
+            params = {'join': 0, 'player_id': player.id, 'guild_id': player.guild_id}
     elif action == 'purchase_sword':
-        print('purchase_sword')
-        player = session.query(Player).order_by(func.random()).first()
-        sword = session.query(Sword).order_by(func.random()).first()
-        print(player)
-        command = 'docker-compose exec mids curl "http://localhost:5000/purchase_sword?buyer_id={}&sword_id={}"'.format(
-            player.id,
-            sword.id
-        )
-        os.system(command)
-
-    time.sleep(5)
+        richest_player = session.query(Player).order_by(Player.money).first()
+        if richest_player is None:
+            continue
+        sword = session.query(Sword).filter(Sword.cost <= richest_player.money).order_by(func.random()).first()
+        if sword is None:
+            continue
+        buyer = session.query(Player).filter(Player.money >= sword.cost).order_by(func.random()).first()
+        params = {'buyer_id': buyer.id, 'sword_id': sword.id}
+    
+    
+    r = requests.get(
+        'http://localhost:5000/{}'.format(action),
+        params=params,
+    )
+    if r.status_code != 200:
+        raise Exception('oops')
+    counter += 1

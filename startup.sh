@@ -46,10 +46,7 @@ for api_call in "${API_CALLS[@]}"; do
     docker-compose exec mids curl "http://localhost:5000/${api_call}"
 done
 
-#docker-compose exec mids kafkacat -C -b kafka:29092 -t events -o beginning
-for event_type in "${EVENT_TYPES[@]}"; do
-    docker-compose exec cloudera hadoop fs -ls "/tmp/${event_type}"
-done
+docker-compose exec mids python ${D}/app/events.py > /dev/null
 
 sleep 20
 echo "Create hive tables" #hard-coded, since changing the table names for querying purposes.
@@ -62,4 +59,5 @@ sleep 5
 docker-compose exec cloudera hive -e "create external table if not exists default.guild_membership (event_body string) stored as parquet location '/tmp/join_guild'  tblproperties ('parquet.compress"="SNAPPY');"
 sleep 5
 docker-compose exec cloudera hive -e "create external table if not exists default.sword_transactions (event_body string) stored as parquet location '/tmp/purchase_sword'  tblproperties ('parquet.compress"="SNAPPY');"
-echo "Ready to open kafka observer, run event generator, and query."
+
+echo "Ready to open kafka observer and query."
