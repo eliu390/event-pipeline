@@ -48,29 +48,29 @@ ORDER BY
 
 
 ### Which guild has the longest membership?
-SELECT b.guild_id, b.player_id, sum(duration) as membership_length
+SELECT c.guild_id, c.player_id, sum(duration) as membership_length
 FROM (
-    SELECT a.guild_id, a.player_id,
-    CASE
-        WHEN a.action = 'true' THEN -date_diff('minute', a.timestamp, current_timestamp)
-        WHEN a.action = 'false' THEN date_diff('minute', a.timestamp, current_timestamp)
-        END as duration
-    FROM (
-        SELECT
-            regexp_extract(event_body,'(?<=guild_id\": )(.*?)(?=}})') as guild_id,
-            regexp_extract(event_body,'(?<=player_id\": )(.*?)(?=, \"timestamp)') as player_id, 
-            regexp_extract(event_body,'(?<=join\": )(.*?)(?=, \"player)') as action,
-            date_add('year', 100, date_parse(regexp_extract(event_body,'(?<=timestamp\": \")(.*?)(?=\", \"guild)'), '%m/%d/%Y %T')) as timestamp
-        FROM
-            guild_membership) a ) b
+    SELECT b.guild_id, b.player_id,
+        CASE
+            WHEN b.action = 'true' THEN date_diff('minute', b.timestamp, current_timestamp)
+            WHEN b.action = 'false' THEN -date_diff('minute', b.timestamp, current_timestamp)
+            END as duration
+    FROM(
+        SELECT *
+        FROM (
+            SELECT * , rank() over (
+                PARTITION BY a.guild_id, a.player_id
+                ORDER BY a.timestamp DESC) as rank
+            FROM (
+                SELECT
+                    regexp_extract(event_body,'(?<=guild_id\": )(.*?)(?=}})') as guild_id,
+                    regexp_extract(event_body,'(?<=player_id\": )(.*?)(?=, \"timestamp)') as player_id, 
+                    regexp_extract(event_body,'(?<=join\": )(.*?)(?=, \"player)') as action,
+                    date_add('year', 100, date_parse(regexp_extract(event_body,'(?<=timestamp\": \")(.*?)(?=\", \"guild)'), '%m/%d/%Y %T')) as timestamp
+                FROM
+                    guild_membership) a )
+        WHERE rank = 1 OR rank = 2 ) b ) c
 GROUP BY
-    b.guild_id, b.player_id
+    c.guild_id, c.player_id
 ORDER BY 
     sum(duration) DESC;
-    
-
-
-
-
-
-
