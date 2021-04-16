@@ -11,4 +11,4 @@
 1. Execute "startup.sh" to set up data pipeline. Wait for pipeline components to load and prompt indicating readiness for next steps.
 2. Open a kafka queue observer (in a new terminal).
 3. Create events (in a new terminal).
-4. Open Presto (in a new terminal) to query hive tables for data analysis. See below for sample queries.
+4. Open Presto (in a new terminal) to query hive tables for data analysis.
