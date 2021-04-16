@@ -1,4 +1,4 @@
-# w205-project3
+# W205 - Project 3
 
 ## Primary files:
 - "startup.sh": Shell script that sets up data pipeline and exposes hive tables for querying.
@@ -22,18 +22,14 @@
 docker-compose exec mids kafkacat -C -b kafka:29092 -t events -o beginning
 ```
 3. Create events (in a new terminal).
-<<<<<<< HEAD
 
 
 ```
 docker-compose exec mids python /w205/w205-project3/app/events.py
 ```
-4. Open Presto (in a new terminal) to query hive tables for data analysis. See below for sample queries.
+4. Open Presto (in a new terminal) to query hive tables.
 
 
 ```
 docker-compose exec presto presto --server presto:8080 --catalog hive --schema default
 ```
-=======
-4. Open Presto (in a new terminal) to query hive tables for data analysis.
->>>>>>> 17d1c73a443dd4aa59323f3b2fe59d781f844f70
