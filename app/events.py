@@ -45,7 +45,9 @@ while counter < NUM_OBJECTS:
         sword = session.query(Sword).filter(Sword.cost <= richest_player.money).order_by(func.random()).first()
         if sword is None:
             continue
-        buyer = session.query(Player).filter(Player.money >= sword.cost).order_by(func.random()).first()
+        buyer = session.query(Player).filter(Player.money >= sword.cost, Player.id != sword.player_id).order_by(func.random()).first()
+        if buyer is None:
+            continue
         params = {'buyer_id': buyer.id, 'sword_id': sword.id}
     
     

@@ -10,7 +10,6 @@ sleep 60
 
 echo "Installing pip dependencies..."
 docker-compose exec mids pip install -r ${D}/app/requirements.txt > /dev/null
-
 echo "Starting Flask app..."
 docker-compose exec -d mids env FLASK_APP=${D}/app/game_api.py flask run --host 0.0.0.0 > /dev/null
 
@@ -18,18 +17,6 @@ echo "Creating Kafka topic..."
 docker-compose exec kafka kafka-topics --create --topic events --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:32181 > /dev/null
 sleep 20
 
-echo "Submitting Spark jobs..."
-EVENT_TYPES=(
-    "add_guild"
-    "add_player"
-    "add_sword"
-    "join_guild"
-    "purchase_sword"
-)
-for event_type in "${EVENT_TYPES[@]}"; do
-    docker-compose exec -d spark spark-submit "${D}/stream/${event_type}.py"
-    sleep 10
-done
 
 echo "Running initial API calls..."
 API_CALLS=(
@@ -47,7 +34,19 @@ for api_call in "${API_CALLS[@]}"; do
     docker-compose exec mids curl "http://localhost:5000/${api_call}"
 done
 
-sleep 5
+echo "Submitting Spark jobs..."
+EVENT_TYPES=(
+    "add_guild"
+    "add_player"
+    "add_sword"
+    "join_guild"
+    "purchase_sword"
+)
+for event_type in "${EVENT_TYPES[@]}"; do
+    docker-compose exec -d spark spark-submit "${D}/stream/${event_type}.py"
+    sleep 20
+done
+
 echo "Generating random events..."
 docker-compose exec mids python ${D}/app/events.py > /dev/null
 
