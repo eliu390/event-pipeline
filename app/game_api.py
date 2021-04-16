@@ -3,12 +3,19 @@ from flask import Flask, request
 from kafka import KafkaProducer
 import json
 from datetime import datetime
-
-from models import Guild, Player, GuildInteraction, Sword, Transaction, session
+from models import (
+    Guild,
+    Player,
+    GuildInteraction,
+    Sword,
+    Transaction,
+    Session
+)
 
 app = Flask(__name__)
 producer = KafkaProducer(bootstrap_servers='kafka:29092')
 
+session = Session()
 
 def log_to_kafka(topic, event):
     event_type = event.pop('event_type')
@@ -145,6 +152,13 @@ def purchase_sword():
                 buyer_id, sword_id, sword.cost,
             )
         )
+
+    # add transaction
+    transaction = Transaction(
+        sword_id=sword_id,
+        buyer_id=buyer_id,
+        seller_id=sword.player_id,
+    )
     
     # update sword
     sword.player_id = buyer_id
@@ -156,13 +170,6 @@ def purchase_sword():
     seller = sword.player
     if seller:
         seller.money += sword.cost
-    
-    # add transaction
-    transaction = Transaction(
-        sword_id=sword_id,
-        buyer_id=buyer_id,
-        seller_id=sword.player_id,
-    )
     
     session.add(transaction)
     session.commit()

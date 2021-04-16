@@ -1,76 +1,34 @@
-# w205-project3
+# W205 - Project 3
 
 ## Primary files:
-- "startup.sh": Shell script that sets up data pipeline and exposes hive tables for querying.
-- "docker-compose.yml"
-- 'app' directory: contains the .py and requirements files responsible for setting up the base tables and flask game API, and generation of random events stream.
-- 'stream' directory: contains the .py files for creating the streaming data pipeline.
-
+- `startup.sh`: Shell script that sets up data pipeline and exposes hive tables for querying.
+- `docker-compose.yml`: contains the docker container information to set up the data pipline.
+- `app` directory: contains the .py and requirement files responsible for setting up the Sqllite tables, Flask game API, and generation of random events.
+- `stream` directory: contains the .py files for creating the streaming pipeline.
 
 
 ## Directions:
-1. Execute "startup.sh" to set up data pipeline. Wait for pipeline components to load and prompt indicating readiness for next steps.
-2. Open a kafka queue observer (in a new terminal).
-3. Create events (in a new terminal):
-    - manual event creation: run an API call from the terminal, e.g. docker-compose exec mids curl "http://localhost:5000/add_sword?cost=1"
-    - automated event creation: run the random event generator, tbd
-4. Open Presto (in a new terminal) to query hive tables for data analysis. See below for sample queries.
+1. Execute `startup.sh` to set up data pipeline. Wait for pipeline components to load and prompt indicating readiness for next steps.
 
 
+```
+./startup.sh
+```
+2. Open a Kafka queue observer (in a new terminal).
 
-## Sample Preso Queries to answer simple business questions:
+
+```
+docker-compose exec mids kafkacat -C -b kafka:29092 -t events -o beginning
+```
+3. If you want, create more random events (in a new terminal).
+
+
+```
+docker-compose exec mids python /w205/w205-project3/app/events.py
+```
+4. Open Presto (in a new terminal) to query Hive tables (see the [Analytics Report](analytics_report.ipynb) for example queries).
+
+
+```
 docker-compose exec presto presto --server presto:8080 --catalog hive --schema default
-
-### Who are my players?
-SELECT
-    distinct regexp_extract(event_body,'(?<=name\": \")(.*?)(?="}})') as distinct_players
-FROM
-    players;
-
-
-### How many guilds are there?
-SELECT
-    count(distinct regexp_extract(event_body,'(?<=name\": \")(.*?)(?="}})') ) as number_of_guilds
-FROM
-    guilds;
-
-
-### Which sword is exhanged the most?
-SELECT
-    regexp_extract(event_body,'(?<=sword_id\": )(.*?)(?=, \"trans)') as sword_id, 
-    count( regexp_extract(event_body,'(?<=sword_id\": )(.*?)(?=, \"trans)') ) as count_of_transactions
-FROM
-    sword_transactions
-GROUP BY
-    regexp_extract(event_body,'(?<=sword_id\": )(.*?)(?=, \"trans)')
-ORDER BY 
-    count( regexp_extract(event_body,'(?<=sword_id\": )(.*?)(?=, \"trans)') ) DESC;
-
-
-### Which guild has the longest membership?
-SELECT b.guild_id, b.player_id, sum(duration) as membership_length
-FROM (
-    SELECT a.guild_id, a.player_id,
-    CASE
-        WHEN a.action = 'true' THEN -date_diff('minute', a.timestamp, current_timestamp)
-        WHEN a.action = 'false' THEN date_diff('minute', a.timestamp, current_timestamp)
-        END as duration
-    FROM (
-        SELECT
-            regexp_extract(event_body,'(?<=guild_id\": )(.*?)(?=}})') as guild_id,
-            regexp_extract(event_body,'(?<=player_id\": )(.*?)(?=, \"timestamp)') as player_id, 
-            regexp_extract(event_body,'(?<=join\": )(.*?)(?=, \"player)') as action,
-            date_add('year', 100, date_parse(regexp_extract(event_body,'(?<=timestamp\": \")(.*?)(?=\", \"guild)'), '%m/%d/%Y %T')) as timestamp
-        FROM
-            guild_membership) a ) b
-GROUP BY
-    b.guild_id, b.player_id
-ORDER BY 
-    sum(duration) DESC;
-    
-
-
-
-
-
-
+```

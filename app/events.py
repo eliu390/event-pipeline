@@ -1,59 +1,58 @@
 # Random event generator script.
 import random
-import os
-import time
+import requests
+import string
+from sqlalchemy.sql.expression import func
 
-EVENT_TYPES = ["add_guild", "add_player", "add_sword", "join_guild","purchase_sword"]
-GUILD_NAMES = ["BatCave","Butlers","BadGuys","GoodGuys","Cops","SupermansTeam"]
-PLAYER_NAMES = ["Bruce","Catwoman","Joker","Two-Face","PoisonIvy","MrFreeze","Alfred"]
-counter = 2
+from models import Guild, Player, Sword, Session
 
-while counter >= 1:
+EVENT_TYPES = ['add_player','add_sword','add_guild','join_guild','purchase_sword']
+GUILD_NAMES = ["BatCave","Butlers","BadGuys","GoodGuys","Cops","TeamSuperman"]
+PLAYER_NAMES = ["Bruce","Catwoman","Joker","TwoFace","PoisonIvy","MrFreeze","Alfred","Penguin"]
+NUM_OBJECTS = 100
 
-    action = random.randint(0, len(EVENT_TYPES)-1)
-
+counter = 0
+while counter < NUM_OBJECTS:
+    action = random.choice(EVENT_TYPES)
+    if action == 'add_sword':
+        params = {'cost': random.randint(1, 101)}
+    elif action == 'add_player':
+        params = {
+            'money': random.randint(1, 101),
+            'name': random.choice(PLAYER_NAMES) + str(counter)}
+    elif action == 'add_guild':
+        params = {'name': random.choice(GUILD_NAMES) + str(counter)}
+    elif action == 'join_guild':
+        session = Session()
+        if counter % 2: # join guild
+            player = session.query(Player).filter(Player.guild_id == None).order_by(func.random()).first()
+            if player is None:
+                continue
+            guild = session.query(Guild).order_by(func.random()).first()
+            if guild is None:
+                continue
+            params = {'join': 1, 'player_id': player.id, 'guild_id': guild.id}
+        else: # leave guild
+            player = session.query(Player).filter(Player.guild_id != None).order_by(func.random()).first()
+            if player is None:
+                continue
+            params = {'join': 0, 'player_id': player.id, 'guild_id': player.guild_id}
+    elif action == 'purchase_sword':
+        session = Session()
+        richest_player = session.query(Player).order_by(Player.money).first()
+        if richest_player is None:
+            continue
+        sword = session.query(Sword).filter(Sword.cost <= richest_player.money).order_by(func.random()).first()
+        if sword is None:
+            continue
+        buyer = session.query(Player).filter(Player.money >= sword.cost).order_by(func.random()).first()
+        params = {'buyer_id': buyer.id, 'sword_id': sword.id}
     
     
-    if EVENT_TYPES[action] == "add_sword":
-        cost = random.randint(1,101)
-        command = 'docker-compose exec mids curl "http://localhost:5000/add_sword?cost='+str(cost)+'"'
-        os.system(command)
-
-    
-    
-    elif EVENT_TYPES[action] == "add_player":
-        if len(PLAYER_NAMES) > 0:
-            draw = random.randint(0,len(PLAYER_NAMES)-1)
-            player_name = PLAYER_NAMES[draw]
-            PLAYER_NAMES.pop(draw)
-            money = random.randint(0,1001)
-            command = 'docker-compose exec mids curl "http://localhost:5000/add_player?name='+str(player_name)+'&money='+str(money)+'"'
-            os.system(command)
-        else:
-            draw = counter
-            counter =+ 1
-            player_name = "RandomPlayer"+str(draw)
-            command = 'docker-compose exec mids curl "http://localhost:5000/add_player?name='+str(player_name)+'&money='+str(money)+'"'
-            os.system(command)
-
-
-    
-    elif EVENT_TYPES[action] == "add_guild":
-        if len(GUILD_NAMES) > 0:
-            draw = random.randint(0,len(GUILD_NAMES)-1)
-            guild_name = GUILD_NAMES[draw]
-            GUILD_NAMES.pop(draw)
-            command = 'docker-compose exec mids curl "http://localhost:5000/add_guild?name='+str(guild_name)+'"'
-            os.system(command)
-        else:
-            draw = counter
-            counter =+ 1
-            guild_name = "RandomGuild"+str(draw)
-            command = 'docker-compose exec mids curl "http://localhost:5000/add_guild?name='+str(guild_name)+'"'
-            os.system(command)
-
-
-    else:
-        print("code tbd...")
-
-    time.sleep(3)
+    r = requests.get(
+        'http://localhost:5000/{}'.format(action),
+        params=params,
+    )
+    if r.status_code != 200:
+        raise Exception('exception for event {}: {}\n\n{}'.format(action, r.reason, params))
+    counter += 1
