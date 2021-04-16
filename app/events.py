@@ -4,7 +4,7 @@ import requests
 import string
 from sqlalchemy.sql.expression import func
 
-from models import Guild, Player, Sword, session
+from models import Guild, Player, Sword, Session
 
 EVENT_TYPES = ['add_player','add_sword','add_guild','join_guild','purchase_sword']
 GUILD_NAMES = ["BatCave","Butlers","BadGuys","GoodGuys","Cops","TeamSuperman"]
@@ -19,10 +19,11 @@ while counter < NUM_OBJECTS:
     elif action == 'add_player':
         params = {
             'money': random.randint(1, 101),
-            'name': PLAYER_NAMES[random.randint(0, len(PLAYER_NAMES) - 1)] + str(counter)}
+            'name': random.choice(PLAYER_NAMES) + str(counter)}
     elif action == 'add_guild':
-        params = {'name': GUILD_NAMES[random.randint(0, len(GUILD_NAMES) - 1)] + str(counter)}
+        params = {'name': random.choice(GUILD_NAMES) + str(counter)}
     elif action == 'join_guild':
+        session = Session()
         if counter % 2: # join guild
             player = session.query(Player).filter(Player.guild_id == None).order_by(func.random()).first()
             if player is None:
@@ -37,6 +38,7 @@ while counter < NUM_OBJECTS:
                 continue
             params = {'join': 0, 'player_id': player.id, 'guild_id': player.guild_id}
     elif action == 'purchase_sword':
+        session = Session()
         richest_player = session.query(Player).order_by(Player.money).first()
         if richest_player is None:
             continue
@@ -54,4 +56,3 @@ while counter < NUM_OBJECTS:
     if r.status_code != 200:
         raise Exception('exception for event {}: {}\n\n{}'.format(action, r.reason, params))
     counter += 1
-    session.expire_all()
