@@ -1,23 +1,23 @@
 #!/bin/bash
 D="/w205/w205-project3"
 
-echo "Starting up containers"
+echo "Starting up containers..."
 docker-compose down
 rm -f ../sqllight.db
 docker-compose up -d > /dev/null
 sleep 60
 
-echo "Installing pip depedencies"
+echo "Installing pip dependencies..."
 docker-compose exec mids pip install -r ${D}/app/requirements.txt > /dev/null
 
-echo "Starting flask app"
+echo "Starting Flask app..."
 docker-compose exec -d mids env FLASK_APP=${D}/app/game_api.py flask run --host 0.0.0.0 > /dev/null
 
-echo "Creating kafka topic"
+echo "Creating Kafka topic..."
 docker-compose exec kafka kafka-topics --create --topic events --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:32181 > /dev/null
 sleep 20
 
-echo "Submitting spark jobs"
+echo "Submitting Spark jobs..."
 EVENT_TYPES=(
     "add_guild"
     "add_player"
@@ -30,11 +30,11 @@ for event_type in "${EVENT_TYPES[@]}"; do
     sleep 10
 done
 
-echo "Running api calls"
+echo "Running API calls..."
 API_CALLS=(
-    "add_player?name=batman&money=9999999"
-    "add_player?name=robin&money=1"
-    "add_guild?name=batman_and_robin"
+    "add_player?name=Batman&money=9999999"
+    "add_player?name=Robin&money=1"
+    "add_guild?name=Batman_and_Robin"
     "add_sword?cost=1"
     "join_guild?player_id=1&guild_id=1&join=1"
     "join_guild?player_id=2&guild_id=1"
@@ -49,7 +49,7 @@ done
 docker-compose exec mids python ${D}/app/events.py > /dev/null
 
 sleep 20
-echo "Create hive tables" #hard-coded, since changing the table names for querying purposes.
+echo "Creating Hive tables..." #hard-coded, since changing the table names for querying purposes.
 docker-compose exec cloudera hive -e "create external table if not exists default.swords (event_body string) stored as parquet location '/tmp/add_sword'  tblproperties ('parquet.compress'='SNAPPY');"
 sleep 5
 docker-compose exec cloudera hive -e "create external table if not exists default.guilds (event_body string) stored as parquet location '/tmp/add_guild'  tblproperties ('parquet.compress"="SNAPPY');"
@@ -60,4 +60,4 @@ docker-compose exec cloudera hive -e "create external table if not exists defaul
 sleep 5
 docker-compose exec cloudera hive -e "create external table if not exists default.sword_transactions (event_body string) stored as parquet location '/tmp/purchase_sword'  tblproperties ('parquet.compress"="SNAPPY');"
 
-echo "Ready to open kafka observer and query."
+echo "Ready to open Kafka observer and query Hive tables."

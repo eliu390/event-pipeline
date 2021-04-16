@@ -7,12 +7,9 @@ from sqlalchemy.sql.expression import func
 from models import Guild, Player, Sword, session
 
 EVENT_TYPES = ['add_player','add_sword','add_guild','join_guild','purchase_sword']
-NUM_OBJECTS = 100
-
-def get_random_word(length=10):
-    return ''.join(
-        random.choice(string.ascii_letters) for _ in range(length)
-    )
+GUILD_NAMES = ["BatCave","Butlers","BadGuys","GoodGuys","Cops","TeamSuperman"]
+PLAYER_NAMES = ["Bruce","Catwoman","Joker","TwoFace","PoisonIvy","MrFreeze","Alfred","Penguin"]
+NUM_OBJECTS = 1000
 
 counter = 0
 while counter < NUM_OBJECTS:
@@ -20,9 +17,11 @@ while counter < NUM_OBJECTS:
     if action == 'add_sword':
         params = {'cost': random.randint(1, 101)}
     elif action == 'add_player':
-        params = {'money': random.randint(1, 101), 'name': get_random_word()}
+        params = {
+            'money': random.randint(1, 101),
+            'name': PLAYER_NAMES[random.randint(0, len(PLAYER_NAMES - 1))] + counter}
     elif action == 'add_guild':
-        params = {'name': get_random_word(10)}
+        params = {'name': GUILD_NAMES[random.randint(0, len(PLAYER_NAMES - 1))] + counter}
     elif action == 'join_guild':
         if counter % 2: # join guild
             player = session.query(Player).filter(Player.guild_id == None).order_by(func.random()).first()
