@@ -9,7 +9,7 @@ from models import Guild, Player, Sword, session
 EVENT_TYPES = ['add_player','add_sword','add_guild','join_guild','purchase_sword']
 GUILD_NAMES = ["BatCave","Butlers","BadGuys","GoodGuys","Cops","TeamSuperman"]
 PLAYER_NAMES = ["Bruce","Catwoman","Joker","TwoFace","PoisonIvy","MrFreeze","Alfred","Penguin"]
-NUM_OBJECTS = 1000
+NUM_OBJECTS = 100
 
 counter = 0
 while counter < NUM_OBJECTS:
@@ -19,9 +19,9 @@ while counter < NUM_OBJECTS:
     elif action == 'add_player':
         params = {
             'money': random.randint(1, 101),
-            'name': PLAYER_NAMES[random.randint(0, len(PLAYER_NAMES - 1))] + counter}
+            'name': PLAYER_NAMES[random.randint(0, len(PLAYER_NAMES) - 1)] + str(counter)}
     elif action == 'add_guild':
-        params = {'name': GUILD_NAMES[random.randint(0, len(PLAYER_NAMES - 1))] + counter}
+        params = {'name': GUILD_NAMES[random.randint(0, len(GUILD_NAMES) - 1)] + str(counter)}
     elif action == 'join_guild':
         if counter % 2: # join guild
             player = session.query(Player).filter(Player.guild_id == None).order_by(func.random()).first()

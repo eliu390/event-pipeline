@@ -1,9 +1,10 @@
 #!/bin/bash
 D="/w205/w205-project3"
 
-echo "Starting up containers..."
+echo "Stopping currently running containers..."
 docker-compose down
 rm -f ../sqllight.db
+echo "Starting up containers..."
 docker-compose up -d > /dev/null
 sleep 60
 

@@ -14,20 +14,19 @@
 ```
 ./startup.sh
 ```
-
 2. Open a Kafka queue observer (in a new terminal).
 
 
 ```
 docker-compose exec mids kafkacat -C -b kafka:29092 -t events -o beginning
 ```
-3. Create events (in a new terminal).
+3. If you want, create more random events (in a new terminal).
 
 
 ```
 docker-compose exec mids python /w205/w205-project3/app/events.py
 ```
-4. Open Presto (in a new terminal) to query Hive tables.
+4. Open Presto (in a new terminal) to query Hive tables (see the [Analytics Report](analytics_report.ipynb) for example queries).
 
 
 ```
