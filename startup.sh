@@ -30,7 +30,7 @@ for event_type in "${EVENT_TYPES[@]}"; do
     sleep 10
 done
 
-echo "Running API calls..."
+echo "Running initial API calls..."
 API_CALLS=(
     "add_player?name=Batman&money=9999999"
     "add_player?name=Robin&money=1"
@@ -46,6 +46,8 @@ for api_call in "${API_CALLS[@]}"; do
     docker-compose exec mids curl "http://localhost:5000/${api_call}"
 done
 
+sleep 5
+echo "Generating random events..."
 docker-compose exec mids python ${D}/app/events.py > /dev/null
 
 sleep 20
